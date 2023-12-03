@@ -2,7 +2,7 @@ name:
     css: '#productTitle'
     type: Text
 price:
-    css: '#price_inside_buybox'
+    css: '.a-price'
     type: Text
 short_description:
     css: '#featurebullets_feature_div'

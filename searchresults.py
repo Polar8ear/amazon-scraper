@@ -1,11 +1,13 @@
+import sys
 from selectorlib import Extractor
+# from bs4 import BeautifulSoup as BS
 import requests
 import json
 from time import sleep
 
 
 # Create an Extractor by reading from the YAML file
-e = Extractor.from_yaml_file('search_results.yml')
+e = Extractor.from_yaml_file('CSS-selectors/search_results.yml')
 
 def scrape(url):
 
@@ -32,24 +34,49 @@ def scrape(url):
         else:
             print("Page %s must have been blocked by Amazon as the status code was %d"%(url,r.status_code))
         return None
+    # Below code kept in case for decision to move to bs4
+    # was used to find out how to see if a product is an ad or not.
+
+    # result = BS(r.text)
+    # result = result.findAll("div",{"data-component-type":"s-search-result"})
+    # for i in range(len(result)):
+    #     if("AdHolder" in result[i]["class"]):
+    #         print("Ad found")
+    #         #print(result[i])
+    #         result1 = result[i].find("h2").getText()#,{"class":"a-text-normal"}
+    #         print(result1)
+    #     else:
+    #         print("ad not found")
+
+
     # Pass the HTML of the page and create
     return e.extract(r.text)
 
-# product_data = []
-with open("search_results_urls.txt",'r') as urllist, open('search_results_output.jsonl','w') as outfile:
-    for url in urllist.read().splitlines():
-        data = scrape(url)
-        if data:
-            for index, product in enumerate(data['products']):
-                product['search_url'] = url
-                response = requests.get(product['image'])
-                print(index)
-                print(response.status_code)
-                if response.status_code:
-                    with open(f'./pictures/{index+1}.jpg', 'wb') as fp:
-                        fp.write(response.content)
-                        fp.close()
-                print("Saving Product: %s"%product['title'])
-                json.dump(product,outfile)
-                outfile.write(",\n")
-                # sleep(5)
+def main():
+    # product_data = []
+    with open("search_results_urls.txt",'r') as urllist, open('output/search_results_output.jsonl','w') as outfile:
+        for url in urllist.read().splitlines():
+            data = scrape(url)
+            if data:
+                for index, product in enumerate(data['products']):
+                    product['search_url'] = url
+                    #Check if user wants ads removed or not
+                    if(len(sys.argv) > 1):
+                        if(sys.argv[1]== "-removeAds"):
+                            if(product['advert'] != None):
+                                continue
+                    response = requests.get(product['image'])
+    #                print(index)
+    #                print(response.status_code)
+    #                if response.status_code:
+    #                    with open(f'./pictures/{index+1}.jpg', 'wb') as fp:
+    #                        fp.write(response.content)
+    #                        fp.close()
+                    print("Saving Product: %s"%product['title'])
+                    json.dump(product,outfile)
+                    outfile.write(",\n")
+            sleep(2)
+
+
+if __name__ == "__main__":
+    main()
